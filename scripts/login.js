@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function () {
             sessionStorage.setItem('accountStatus', 'active');
             sessionStorage.setItem('username', username);
             sessionStorage.setItem('userFullName', 'Roger Alario');
-            sessionStorage.setItem('accountBalance', '2411021.00');
+            sessionStorage.setItem('accountBalance', '331425.00');
             sessionStorage.setItem('clientNumber', '8392746157');
 
             if (rememberMe) {
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Redirect after delay
             setTimeout(() => {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard.html?v=20260814-2';
             }, 1500);
         } else {
             // Show error

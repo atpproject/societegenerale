@@ -4,8 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Société Générale - Espace Client</title>
-    <link rel="stylesheet" href="styles/dashboard.css">
+    <link rel="stylesheet" href="styles/dashboard.css?v=20260814-2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
@@ -87,11 +90,11 @@
                                 <span class="card-type">Compte Courant</span>
                                 <span class="card-number">•••• <span id="account-last-digits">6157</span></span>
                             </div>
-                            <i class="fas fa-university"></i>
+                            <span class="account-status"><i class="fas fa-check-circle"></i> Actif</span>
                         </div>
                         <div class="card-balance">
                             <span class="balance-label">Solde disponible</span>
-                            <span class="balance-amount" id="main-balance">2 411 021,00€</span>
+                            <span class="balance-amount" id="main-balance">331 425,00 €</span>
                         </div>
                         <div class="card-footer">
                             <button class="card-btn" data-action="virement">
@@ -357,74 +360,67 @@
         </main>
     </div>
 
-    <!-- Modal Compte Bloqué -->
-    <div id="blocked-modal" class="modal-overlay">
-        <div class="modal-content-blocked">
-            <div class="modal-icon-warning">
-                <i class="fas fa-exclamation-triangle"></i>
+    <!-- Nouveau virement -->
+    <div id="transfer-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="transfer-title">
+        <div class="modal-content-blocked transfer-modal-content">
+            <button class="modal-close" type="button" data-close-modal aria-label="Fermer">&times;</button>
+            <div class="modal-icon-transfer"><i class="fas fa-paper-plane"></i></div>
+            <h2 id="transfer-title">Effectuer un virement</h2>
+            <p class="modal-main-text">Le montant sera débité immédiatement de votre compte courant.</p>
+            <form id="transfer-form" novalidate>
+                <div class="transfer-balance">Solde disponible : <strong id="transfer-balance"></strong></div>
+                <div class="form-group">
+                    <label for="beneficiary-name">Nom du bénéficiaire</label>
+                    <input id="beneficiary-name" name="beneficiaryName" type="text" maxlength="80" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label for="beneficiary-iban">IBAN du bénéficiaire</label>
+                    <input id="beneficiary-iban" name="iban" type="text" maxlength="34" required spellcheck="false" placeholder="FR14 2004 1010 0505 0001 3M02 606">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="transfer-amount">Montant</label>
+                        <div class="amount-input"><input id="transfer-amount" name="amount" type="number" min="0.01" step="0.01" required><span>€</span></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="transfer-reference">Motif</label>
+                        <input id="transfer-reference" name="reference" type="text" maxlength="100" required placeholder="Ex. Facture août">
+                    </div>
+                </div>
+                <p id="transfer-error" class="form-error" role="alert"></p>
+                <div class="modal-actions">
+                    <button class="btn-modal-secondary" type="button" data-close-modal>Annuler</button>
+                    <button class="btn-modal-primary" type="submit"><i class="fas fa-check"></i> Confirmer le virement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reçu et détail d'une opération -->
+    <div id="receipt-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="receipt-title">
+        <div class="modal-content-blocked receipt-modal-content">
+            <button class="modal-close" type="button" data-close-modal aria-label="Fermer">&times;</button>
+            <div class="receipt-success"><i class="fas fa-check-circle"></i></div>
+            <h2 id="receipt-title">Virement effectué</h2>
+            <p class="modal-main-text" id="receipt-subtitle">Votre opération a bien été enregistrée.</p>
+            <div class="receipt-card">
+                <div class="receipt-brand"><img src="assets/images/sg-logo.svg" alt="SG"><span>Justificatif de virement</span></div>
+                <div class="info-row"><span class="info-label">Référence</span><span class="info-value" id="receipt-id"></span></div>
+                <div class="info-row"><span class="info-label">Date</span><span class="info-value" id="receipt-date"></span></div>
+                <div class="info-row"><span class="info-label">Bénéficiaire</span><span class="info-value" id="receipt-beneficiary"></span></div>
+                <div class="info-row"><span class="info-label">IBAN</span><span class="info-value" id="receipt-iban"></span></div>
+                <div class="info-row"><span class="info-label">Motif</span><span class="info-value" id="receipt-reference"></span></div>
+                <div class="info-row receipt-total"><span class="info-label">Montant envoyé</span><span class="info-value" id="receipt-amount"></span></div>
+                <div class="receipt-status"><i class="fas fa-check"></i> Exécuté</div>
             </div>
-            <h2>Compte Temporairement Bloqué</h2>
-            <p class="modal-main-text">
-                Votre compte bancaire a été temporairement suspendu pour des raisons de sécurité.
-            </p>
-
-            <div class="blocked-info-box">
-                <div class="info-row">
-                    <span class="info-label">Titulaire du compte :</span>
-                    <span class="info-value" id="modal-holder-name">Roger Alario</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Numéro de client :</span>
-                    <span class="info-value" id="modal-client-number">8392746157</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Solde du compte :</span>
-                    <span class="info-value highlight" id="modal-balance">2 411 021,00€ €</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Montant pour déblocage :</span>
-                    <span class="info-value highlight" id="modal-unlock-amount">5 000,00 €</span>
-                </div>
-
-                <div class="info-row">
-                    <span class="info-label"></span>
-                    <span class="info-value" id="modal-block-date"></span>
-                </div>
-
-            </div>
-
-            <div class="modal-message">
-                <p><strong>Motif du blocage :</strong></p>
-                <p>Suite à une activité inhabituelle détectée sur votre compte, nous avons procédé à une suspension
-                    temporaire afin de protéger vos fonds et votre sécurité financière.</p>
-                <p><strong>Pour débloquer votre compte, veuillez :</strong></p>
-                <ul>
-                    <li>Contacter immédiatement votre conseiller bancaire</li>
-                    <li>Fournir les documents d'identité nécessaires</li>
-                    <li>Effectuer la procédure de vérification de sécurité</li>
-                    <li>Régler le montant de déblocage indiqué ci-dessus</li>
-                </ul>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn-modal-primary" onclick="closeBlockedModal()">
-                    <i class="fas fa-phone"></i>
-                    Contacter le Service Client
-                </button>
-                <button class="btn-modal-secondary" onclick="closeBlockedModal()">
-                    <i class="fas fa-times"></i>
-                    Fermer
-                </button>
-            </div>
-
-            <div class="modal-footer-info">
-                <i class="fas fa-info-circle"></i>
-                <p>Service Client disponible 24h/24 - 7j/7 au <strong>09 69 36 96 96</strong></p>
+            <div class="modal-actions receipt-actions">
+                <button class="btn-modal-primary" id="print-receipt" type="button"><i class="fas fa-print"></i> Imprimer le reçu</button>
+                <button class="btn-modal-secondary" type="button" data-close-modal>Fermer</button>
             </div>
         </div>
     </div>
 
-    <script src="scripts/dashboard.js"></script>
+    <script src="scripts/dashboard.js?v=20260814-2"></script>
 </body>
 
 </html>

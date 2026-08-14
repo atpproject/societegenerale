@@ -1,280 +1,315 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Check if user is logged in
+    const DEFAULT_BALANCE = 331425;
+    const STORAGE_PREFIX = 'sg-account-';
     const accountStatus = sessionStorage.getItem('accountStatus');
     const username = sessionStorage.getItem('username');
-    const userFullName = sessionStorage.getItem('userFullName') || 'Client';
-    const accountBalance = sessionStorage.getItem('accountBalance') || '2411021.00';
-    const clientNumber = sessionStorage.getItem('clientNumber') || '8392746157';
 
-    if (!accountStatus || accountStatus !== 'active') {
+    if (accountStatus !== 'active' || !username) {
         window.location.href = 'index.html';
         return;
     }
 
-    // Set user information
+    const userFullName = sessionStorage.getItem('userFullName') || 'Client';
+    const clientNumber = sessionStorage.getItem('clientNumber') || username;
+    const balanceKey = STORAGE_PREFIX + clientNumber + '-balance-v2';
+    const transfersKey = STORAGE_PREFIX + clientNumber + '-transfers-v2';
+    let balance = readBalance();
+    let transfers = readTransfers();
+    let selectedTransaction = null;
+
+    const balanceElement = document.getElementById('main-balance');
+    const transferBalanceElement = document.getElementById('transfer-balance');
+    const transferModal = document.getElementById('transfer-modal');
+    const receiptModal = document.getElementById('receipt-modal');
+    const transferForm = document.getElementById('transfer-form');
+    const transferError = document.getElementById('transfer-error');
+    const transactionsList = document.querySelector('.transactions-list');
+
     document.getElementById('user-name').textContent = userFullName;
-    const cardHolderNames = document.querySelectorAll('.card-name');
-    cardHolderNames.forEach(name => {
+    document.getElementById('account-last-digits').textContent = clientNumber.slice(-4);
+    document.querySelectorAll('.card-name').forEach(function (name) {
         name.textContent = userFullName.toUpperCase();
     });
+    renderBalance();
+    renderSavedTransfers();
 
-    // Format and display balance
-    const formattedBalance = formatCurrency(accountBalance);
-    document.getElementById('main-balance').textContent = formattedBalance;
-    // document.getElementById('modal-balance').textContent = formattedBalance;
-    // document.getElementById('modal-unlock-amount').textContent = formattedBalance;
-    document.getElementById('modal-holder-name').textContent = userFullName;
-    document.getElementById('modal-client-number').textContent = clientNumber;
-
-    // Set current date for block date
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('fr-FR') + ' - ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    // document.getElementById('modal-block-date').textContent = dateStr;
-
-    // Function to format currency
-    function formatCurrency(amount) {
-        return new Intl.NumberFormat('fr-FR', {
-            style: 'currency',
-            currency: 'EUR'
-        }).format(amount);
+    function readBalance() {
+        const savedValue = localStorage.getItem(balanceKey);
+        const saved = savedValue === null ? NaN : Number(savedValue);
+        if (Number.isFinite(saved) && saved >= 0) return saved;
+        return DEFAULT_BALANCE;
     }
 
-    // Function to show blocked modal
-    function showBlockedModal() {
-        const modal = document.getElementById('blocked-modal');
+    function readTransfers() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(transfersKey) || '[]');
+            return Array.isArray(saved) ? saved.filter(isValidTransfer) : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function isValidTransfer(item) {
+        return item && typeof item.id === 'string' && typeof item.beneficiary === 'string' &&
+            typeof item.reference === 'string' && typeof item.createdAt === 'string' &&
+            !Number.isNaN(Date.parse(item.createdAt)) && Number.isFinite(Number(item.amount)) && Number(item.amount) > 0;
+    }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+    }
+
+    function formatDate(value) {
+        return new Intl.DateTimeFormat('fr-FR', {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+        }).format(new Date(value));
+    }
+
+    function renderBalance() {
+        const formatted = formatCurrency(balance);
+        balanceElement.textContent = formatted;
+        transferBalanceElement.textContent = formatted;
+        sessionStorage.setItem('accountBalance', balance.toFixed(2));
+    }
+
+    function renderSavedTransfers() {
+        transfers.forEach(function (transfer) {
+            transactionsList.prepend(createTransactionElement(transfer));
+        });
+    }
+
+    function createTransactionElement(transfer) {
+        const item = document.createElement('div');
+        item.className = 'transaction-item expense';
+        item.dataset.type = 'virement';
+        item.dataset.transactionId = transfer.id;
+
+        const icon = document.createElement('div');
+        icon.className = 'transaction-icon';
+        icon.innerHTML = '<i class="fas fa-paper-plane"></i>';
+
+        const details = document.createElement('div');
+        details.className = 'transaction-details';
+        const name = document.createElement('span');
+        name.className = 'transaction-name';
+        name.textContent = 'Virement vers ' + transfer.beneficiary;
+        const date = document.createElement('span');
+        date.className = 'transaction-date';
+        date.textContent = formatDate(transfer.createdAt) + ' · ' + transfer.reference;
+        details.append(name, date);
+
+        const amount = document.createElement('div');
+        amount.className = 'transaction-amount negative';
+        amount.textContent = '-' + formatCurrency(transfer.amount);
+
+        const button = document.createElement('button');
+        button.className = 'transaction-btn';
+        button.type = 'button';
+        button.dataset.action = 'details-transaction';
+        button.setAttribute('aria-label', 'Voir le reçu du virement');
+        button.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        item.append(icon, details, amount, button);
+        return item;
+    }
+
+    function openModal(modal) {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
 
-    // Function to close blocked modal
-    window.closeBlockedModal = function () {
-        const modal = document.getElementById('blocked-modal');
+    function closeModal(modal) {
         modal.classList.remove('active');
-        document.body.style.overflow = 'auto';
-    };
+        if (!document.querySelector('.modal-overlay.active')) document.body.style.overflow = '';
+    }
 
-    // Add click event to all buttons with data-action attribute
-    document.querySelectorAll('[data-action]').forEach(element => {
-        element.addEventListener('click', function (e) {
-            e.preventDefault();
-            const action = this.getAttribute('data-action');
+    function openTransfer() {
+        transferError.textContent = '';
+        renderBalance();
+        openModal(transferModal);
+        setTimeout(function () { document.getElementById('beneficiary-name').focus(); }, 50);
+    }
 
-            // Don't show modal for filter buttons
-            if (action === 'all' || action === 'virements' || action === 'cartes' || action === 'prelevements') {
-                handleFilter(action);
-                return;
-            }
+    function normaliseIban(value) {
+        return value.replace(/\s/g, '').toUpperCase();
+    }
 
-            // Show blocked modal for all other actions
-            showBlockedModal();
-        });
+    function isValidIban(value) {
+        const iban = normaliseIban(value);
+        if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(iban)) return false;
+        const rearranged = iban.slice(4) + iban.slice(0, 4);
+        let remainder = 0;
+        for (const character of rearranged) {
+            const digits = /[A-Z]/.test(character) ? String(character.charCodeAt(0) - 55) : character;
+            for (const digit of digits) remainder = (remainder * 10 + Number(digit)) % 97;
+        }
+        return remainder === 1;
+    }
+
+    transferForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        const beneficiary = transferForm.elements.beneficiaryName.value.trim();
+        const iban = normaliseIban(transferForm.elements.iban.value);
+        const amount = Math.round(Number(transferForm.elements.amount.value) * 100) / 100;
+        const reference = transferForm.elements.reference.value.trim();
+
+        if (!beneficiary || !reference || !Number.isFinite(amount) || amount <= 0) {
+            transferError.textContent = 'Veuillez compléter tous les champs avec un montant valide.';
+            return;
+        }
+        if (!isValidIban(iban)) {
+            transferError.textContent = 'L’IBAN saisi n’est pas valide.';
+            return;
+        }
+        if (amount > balance) {
+            transferError.textContent = 'Solde insuffisant pour effectuer ce virement.';
+            return;
+        }
+
+        const submitButton = transferForm.querySelector('[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement...';
+
+        window.setTimeout(function () {
+            const transfer = {
+                id: 'VIR-' + Date.now().toString(36).toUpperCase(),
+                beneficiary: beneficiary,
+                iban: iban,
+                amount: amount,
+                reference: reference,
+                createdAt: new Date().toISOString(),
+                status: 'executed'
+            };
+            balance = Math.round((balance - amount) * 100) / 100;
+            transfers.push(transfer);
+            localStorage.setItem(balanceKey, String(balance));
+            localStorage.setItem(transfersKey, JSON.stringify(transfers));
+            renderBalance();
+            transactionsList.prepend(createTransactionElement(transfer));
+            transferForm.reset();
+            submitButton.disabled = false;
+            submitButton.innerHTML = '<i class="fas fa-check"></i> Confirmer le virement';
+            closeModal(transferModal);
+            showReceipt(transfer, false);
+            showNotification('Virement effectué et solde mis à jour.', 'success');
+        }, 650);
     });
 
-    // Handle filter buttons
-    function handleFilter(filter) {
-        // Update active state
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.getAttribute('data-filter') === filter) {
-                btn.classList.add('active');
-            }
-        });
+    function maskIban(iban) {
+        if (!iban) return 'Non disponible';
+        return iban.slice(0, 4) + ' •••• •••• •••• ' + iban.slice(-4);
+    }
 
-        // Filter transactions
-        const transactions = document.querySelectorAll('.transaction-item');
-        transactions.forEach(transaction => {
-            const type = transaction.getAttribute('data-type');
-            if (filter === 'all') {
-                transaction.style.display = 'flex';
-            } else if (filter === 'virements' && type === 'virement') {
-                transaction.style.display = 'flex';
-            } else if (filter === 'cartes' && type === 'carte') {
-                transaction.style.display = 'flex';
-            } else if (filter === 'prelevements' && type === 'prelevement') {
-                transaction.style.display = 'flex';
-            } else {
-                transaction.style.display = 'none';
-            }
+    function showReceipt(transfer, isDetail) {
+        selectedTransaction = transfer;
+        document.getElementById('receipt-title').textContent = isDetail ? 'Détail du virement' : 'Virement effectué';
+        document.getElementById('receipt-subtitle').textContent = isDetail ? 'Cette opération a été exécutée.' : 'Votre opération a bien été enregistrée.';
+        document.getElementById('receipt-id').textContent = transfer.id;
+        document.getElementById('receipt-date').textContent = formatDate(transfer.createdAt);
+        document.getElementById('receipt-beneficiary').textContent = transfer.beneficiary;
+        document.getElementById('receipt-iban').textContent = maskIban(transfer.iban);
+        document.getElementById('receipt-reference').textContent = transfer.reference;
+        document.getElementById('receipt-amount').textContent = formatCurrency(transfer.amount);
+        openModal(receiptModal);
+    }
+
+    function showStaticTransactionDetail(item) {
+        const name = item.querySelector('.transaction-name').textContent;
+        const date = item.querySelector('.transaction-date').textContent;
+        const amountText = item.querySelector('.transaction-amount').textContent;
+        selectedTransaction = null;
+        document.getElementById('receipt-title').textContent = 'Détail de l’opération';
+        document.getElementById('receipt-subtitle').textContent = name;
+        document.getElementById('receipt-id').textContent = 'Opération enregistrée';
+        document.getElementById('receipt-date').textContent = date;
+        document.getElementById('receipt-beneficiary').textContent = name;
+        document.getElementById('receipt-iban').textContent = '—';
+        document.getElementById('receipt-reference').textContent = item.dataset.type || 'opération';
+        document.getElementById('receipt-amount').textContent = amountText;
+        openModal(receiptModal);
+    }
+
+    function filterTransactions(filter) {
+        document.querySelectorAll('.filter-btn').forEach(function (button) {
+            button.classList.toggle('active', button.dataset.filter === filter);
+        });
+        document.querySelectorAll('.transaction-item').forEach(function (item) {
+            const visible = filter === 'all' ||
+                (filter === 'virements' && item.dataset.type === 'virement') ||
+                (filter === 'cartes' && item.dataset.type === 'carte') ||
+                (filter === 'prelevements' && item.dataset.type === 'prelevement');
+            item.style.display = visible ? 'flex' : 'none';
         });
     }
 
-    // Navigation items
-    const navItems = document.querySelectorAll('.nav-item[data-action]');
-    navItems.forEach(item => {
-        item.addEventListener('click', function (e) {
-            e.preventDefault();
-            const action = this.getAttribute('data-action');
+    document.addEventListener('click', function (event) {
+        const closeButton = event.target.closest('[data-close-modal]');
+        if (closeButton) {
+            closeModal(closeButton.closest('.modal-overlay'));
+            return;
+        }
+        if (event.target.classList.contains('modal-overlay')) {
+            closeModal(event.target);
+            return;
+        }
 
-            // Update active state
-            navItems.forEach(nav => nav.classList.remove('active'));
-            this.classList.add('active');
+        const filterButton = event.target.closest('.filter-btn');
+        if (filterButton) {
+            filterTransactions(filterButton.dataset.filter);
+            return;
+        }
 
-            // Show blocked modal
-            showBlockedModal();
-        });
-    });
+        const actionElement = event.target.closest('[data-action]');
+        if (!actionElement) return;
+        event.preventDefault();
+        const action = actionElement.dataset.action;
 
-    // Logout functionality
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-
-            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-                sessionStorage.clear();
-                window.location.href = 'index.html';
-            }
-        });
-    }
-
-    // Close modal when clicking outside
-    const modal = document.getElementById('blocked-modal');
-    modal.addEventListener('click', function (e) {
-        if (e.target === modal) {
-            closeBlockedModal();
+        if (action === 'virement' || action === 'virements') openTransfer();
+        else if (action === 'operations' || action === 'comptes' || action === 'synthese') {
+            document.querySelector('.transactions-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (action === 'details-transaction') {
+            const item = actionElement.closest('.transaction-item');
+            const transfer = transfers.find(function (entry) { return entry.id === item.dataset.transactionId; });
+            transfer ? showReceipt(transfer, true) : showStaticTransactionDetail(item);
+        } else if (action === 'load-more') {
+            showNotification('Toutes les opérations disponibles sont affichées.', 'info');
+        } else if (action === 'retirer' || action === 'deposer') {
+            showNotification('La gestion de l’épargne sera bientôt disponible.', 'info');
+        } else if (action === 'bloquer-carte') {
+            showNotification('Pour votre sécurité, confirmez cette action auprès de votre conseiller.', 'info');
+        } else {
+            showNotification('Cette rubrique sera bientôt disponible.', 'info');
         }
     });
 
-    // Add ESC key to close modal
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            closeBlockedModal();
+    document.getElementById('print-receipt').addEventListener('click', function () {
+        receiptModal.classList.add('print-receipt');
+        window.print();
+        receiptModal.classList.remove('print-receipt');
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(closeModal);
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', function (event) {
+        event.preventDefault();
+        if (window.confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+            sessionStorage.clear();
+            window.location.href = 'index.html';
         }
     });
 
-    // Animate balance on load
-    animateBalance();
-
-    function animateBalance() {
-        const balanceElement = document.getElementById('main-balance');
-        const targetAmount = parseFloat(accountBalance);
-        const duration = 2000;
-        const steps = 60;
-        const increment = targetAmount / steps;
-        let current = 0;
-        let step = 0;
-
-        const timer = setInterval(() => {
-            step++;
-            current += increment;
-
-            if (step >= steps) {
-                current = targetAmount;
-                clearInterval(timer);
-            }
-
-            balanceElement.textContent = formatCurrency(current);
-        }, duration / steps);
-    }
-
-    // Add hover effects to transaction items
-    const transactionItems = document.querySelectorAll('.transaction-item');
-    transactionItems.forEach(item => {
-        item.addEventListener('mouseenter', function () {
-            this.style.transform = 'translateX(8px)';
-        });
-
-        item.addEventListener('mouseleave', function () {
-            this.style.transform = 'translateX(0)';
-        });
-    });
-
-    // Show welcome notification
-    setTimeout(() => {
-        showNotification(`Bienvenue ${userFullName} !`, 'info');
-    }, 1000);
-
-    // Notification function
-    function showNotification(message, type = 'info') {
-        const existing = document.querySelectorAll('.notification-toast');
-        existing.forEach(n => n.remove());
-
+    function showNotification(message, type) {
+        document.querySelectorAll('.notification-toast').forEach(function (toast) { toast.remove(); });
         const notification = document.createElement('div');
-        notification.className = `notification-toast ${type}`;
-        notification.innerHTML = `
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
-            <span>${message}</span>
-        `;
-
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
-            color: white;
-            padding: 15px 25px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 9999;
-            animation: slideInRight 0.3s ease-out;
-            font-size: 14px;
-            max-width: 350px;
-        `;
-
+        notification.className = 'notification-toast ' + (type || 'info');
+        const icon = document.createElement('i');
+        icon.className = 'fas ' + (type === 'success' ? 'fa-check-circle' : 'fa-info-circle');
+        const text = document.createElement('span');
+        text.textContent = message;
+        notification.append(icon, text);
         document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.style.animation = 'slideOutRight 0.3s ease-out';
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
-        }, 3000);
+        window.setTimeout(function () { notification.remove(); }, 3500);
     }
-
-    // Add notification animations
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideInRight {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        @keyframes slideOutRight {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Add smooth scroll
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
-
-    // Simulate live balance updates
-    setInterval(() => {
-        const balanceElements = document.querySelectorAll('.balance-amount');
-        balanceElements.forEach(el => {
-            if (el.id === 'main-balance') {
-                // Subtle animation to show it's "live"
-                el.style.transform = 'scale(1.02)';
-                setTimeout(() => {
-                    el.style.transform = 'scale(1)';
-                }, 200);
-            }
-        });
-    }, 15000); // Every 15 seconds
 });

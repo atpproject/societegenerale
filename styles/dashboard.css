@@ -630,7 +630,7 @@ body {
     color: #E60028;
 }
 
-/* Modal Compte Bloqué */
+/* Modales */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -818,6 +818,234 @@ body {
     margin: 0;
 }
 
+/* Compte actif, virements et reçus */
+.account-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 11px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.18);
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.transfer-modal-content,
+.receipt-modal-content {
+    max-width: 650px;
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 18px;
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 50%;
+    background: #f2f2f2;
+    color: #555;
+    cursor: pointer;
+    font-size: 25px;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    background: #e5e5e5;
+}
+
+.modal-icon-transfer,
+.receipt-success {
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff0f3;
+    color: #E60028;
+    font-size: 28px;
+}
+
+.receipt-success {
+    background: #e8f5e9;
+    color: #28a745;
+    font-size: 36px;
+}
+
+.transfer-balance {
+    padding: 14px 16px;
+    margin-bottom: 22px;
+    border-radius: 10px;
+    background: #f7f7f8;
+    color: #555;
+    text-align: center;
+}
+
+.transfer-balance strong {
+    color: #111;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 7px;
+    color: #333;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid #d8d8d8;
+    border-radius: 9px;
+    outline: none;
+    font: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus {
+    border-color: #E60028;
+    box-shadow: 0 0 0 3px rgba(230, 0, 40, 0.1);
+}
+
+.amount-input {
+    position: relative;
+}
+
+.amount-input input {
+    padding-right: 38px;
+}
+
+.amount-input span {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #555;
+    font-weight: 700;
+}
+
+.form-error {
+    min-height: 20px;
+    margin: -4px 0 14px;
+    color: #c40022;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.btn-modal-primary:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+.receipt-card {
+    padding: 24px;
+    margin-bottom: 22px;
+    border: 1px solid #e4e4e4;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.receipt-brand {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding-bottom: 18px;
+    margin-bottom: 6px;
+    border-bottom: 2px solid #E60028;
+    color: #222;
+    font-weight: 700;
+}
+
+.receipt-brand img {
+    width: 88px;
+    height: auto;
+}
+
+.receipt-card .info-value {
+    max-width: 62%;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.receipt-total .info-value {
+    color: #E60028;
+    font-size: 20px;
+}
+
+.receipt-status {
+    width: max-content;
+    margin: 18px auto 0;
+    padding: 7px 13px;
+    border-radius: 20px;
+    background: #e8f5e9;
+    color: #22843b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 360px;
+    padding: 15px 22px;
+    border-radius: 10px;
+    background: #1976a3;
+    color: white;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.22);
+    animation: slideInToast 0.25s ease-out;
+}
+
+.notification-toast.success {
+    background: #26853c;
+}
+
+@keyframes slideInToast {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@media print {
+    body * { visibility: hidden !important; }
+    #receipt-modal.print-receipt,
+    #receipt-modal.print-receipt * { visibility: visible !important; }
+    #receipt-modal.print-receipt {
+        position: absolute;
+        inset: 0;
+        display: block;
+        background: white;
+    }
+    #receipt-modal.print-receipt .modal-content-blocked {
+        max-width: 720px;
+        margin: 0 auto;
+        box-shadow: none;
+    }
+    #receipt-modal.print-receipt .modal-close,
+    #receipt-modal.print-receipt .receipt-actions,
+    #receipt-modal.print-receipt .receipt-success,
+    #receipt-modal.print-receipt > div > h2,
+    #receipt-modal.print-receipt .modal-main-text { display: none !important; }
+}
+
 /* Animations */
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -903,5 +1131,15 @@ body {
     
     .modal-actions {
         flex-direction: column;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .receipt-card .info-row {
+        align-items: flex-start;
+        gap: 12px;
     }
 }

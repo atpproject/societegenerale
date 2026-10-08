@@ -133,7 +133,7 @@ Cette application bancaire simule l'expérience complète d'une banque en ligne 
 ┌─────────────────────────────────────────────┐
 │          Société Générale Logo              │
 │                                             │
-│              ⚠️ (Animation)                 │
+│                 ⚠️                │
 │                                             │
 │      Compte temporairement bloqué          │
 │                                             │
@@ -141,20 +141,18 @@ Cette application bancaire simule l'expérience complète d'une banque en ligne 
 │  suspendu pour des raisons de sécurité     │
 │                                             │
 │  ╔══════════════════════════════════════╗  │
-│  ║ 👤 Compte: •••• 4521                 ║  │
-│  ║ 📅 Date: 07/01/2026 - 10:45          ║  │
-│  ║ 🛡️ Raison: Activité suspecte        ║  │
+│  ║ 👤 Compte: •••• 4521   
+      Montant deblocage : **********              ║           ║  │
+│  ║         ║  │
 │  ╚══════════════════════════════════════╝  │
 │                                             │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐  │
-│  │ 📞 Appel │ │🏢 Agence │ │🔓 Débloq │  │
-│  │ Service  │ │  Proche  │ │ En ligne │  │
-│  └──────────┘ └──────────┘ └──────────┘  │
-│                                             │
-│  💡 Conseils de sécurité                   │
-│  ✅ Ne communiquez jamais vos codes...     │
-│  ✅ Vérifiez régulièrement...              │
-│  ✅ Utilisez un mot de passe fort...       │
+│  ┌──────────┐ ┌──────────┐  
+│  │ 📞 Appel │ │🏢 Agence │  
+│  │ Service  │ │  Proche 
+              Rendez vous dans une de nos agences  │
+│  └─ Numéro: **09 69 36 96 96**
+     Disponibilité: 24h/24 - 7j/7─────────┘ └──────────┘ └
+│                                                    │
 │                                             │
 └─────────────────────────────────────────────┘
 ```

@@ -26,12 +26,12 @@ document.addEventListener('DOMContentLoaded', function () {
         // Hide error message
         errorMessage.style.display = 'none';
 
-        // Validate credentials for Roger Alario
+        // Validate the existing demo credentials.
         if (username === '8392746157' && password === '47298193') {
             // Successful login
             sessionStorage.setItem('accountStatus', 'active');
             sessionStorage.setItem('username', username);
-            sessionStorage.setItem('userFullName', 'Roger Alario');
+            sessionStorage.setItem('userFullName', 'MAURICE BYNE');
             sessionStorage.setItem('accountBalance', '331425.00');
             sessionStorage.setItem('clientNumber', '8392746157');
 

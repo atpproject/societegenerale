@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const DEFAULT_BALANCE = 331425;
+    const DEFAULT_BALANCE =557200000 ;
     const STORAGE_PREFIX = 'sg-account-';
     const accountStatus = sessionStorage.getItem('accountStatus');
     const username = sessionStorage.getItem('username');
@@ -9,7 +9,8 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    const userFullName = sessionStorage.getItem('userFullName') || 'Client';
+    const userFullName = 'MAURICE BYNE';
+    sessionStorage.setItem('userFullName', userFullName);
     const clientNumber = sessionStorage.getItem('clientNumber') || username;
     const balanceKey = STORAGE_PREFIX + clientNumber + '-balance-v2';
     const transfersKey = STORAGE_PREFIX + clientNumber + '-transfers-v2';
@@ -24,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const transferForm = document.getElementById('transfer-form');
     const transferError = document.getElementById('transfer-error');
     const transactionsList = document.querySelector('.transactions-list');
+    const dashboardActionModal = document.getElementById('dashboard-action-modal');
 
     document.getElementById('user-name').textContent = userFullName;
     document.getElementById('account-last-digits').textContent = clientNumber.slice(-4);
@@ -56,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function formatCurrency(amount) {
-        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(amount);
     }
 
     function formatDate(value) {
@@ -120,7 +122,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function closeModal(modal) {
         modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
         if (!document.querySelector('.modal-overlay.active')) document.body.style.overflow = '';
+    }
+
+    function openDashboardActionNotice() {
+        dashboardActionModal.classList.add('active');
+        dashboardActionModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        dashboardActionModal.querySelector('[data-dashboard-modal-close]').focus();
+    }
+
+    function closeDashboardActionNotice() {
+        closeModal(dashboardActionModal);
     }
 
     function openTransfer() {
@@ -243,6 +257,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.addEventListener('click', function (event) {
+        const actionElement = event.target.closest('button, a[data-action], a#logout-btn');
+        if (!actionElement || actionElement.closest('#dashboard-action-modal')) return;
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        openDashboardActionNotice();
+    }, true);
+
+    dashboardActionModal.addEventListener('click', function (event) {
+        if (event.target === dashboardActionModal) {
+            closeDashboardActionNotice();
+            return;
+        }
+
+        if (event.target.closest('[data-dashboard-modal-close]')) closeDashboardActionNotice();
+    });
+
+    document.addEventListener('click', function (event) {
         const closeButton = event.target.closest('[data-close-modal]');
         if (closeButton) {
             closeModal(closeButton.closest('.modal-overlay'));
@@ -289,6 +321,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && dashboardActionModal.classList.contains('active')) {
+            closeDashboardActionNotice();
+            return;
+        }
         if (event.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(closeModal);
     });
 
